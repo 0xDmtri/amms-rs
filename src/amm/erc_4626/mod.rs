@@ -63,6 +63,11 @@ impl AutomatedMarketMaker for ERC4626Vault {
         vec![self.vault_token, self.asset_token]
     }
 
+    /// Returns a vector of tokens' decimals in the AMM.
+    fn decimals(&self) -> Vec<u8> {
+        vec![self.vault_token_decimals, self.asset_token_decimals]
+    }
+
     fn calculate_price(&self, base_token: Address, _quote_token: Address) -> Result<f64, AMMError> {
         Ok(q64_to_f64(self.calculate_price_64_x_64(base_token)?))
     }

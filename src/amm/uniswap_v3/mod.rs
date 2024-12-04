@@ -129,6 +129,10 @@ impl AutomatedMarketMaker for UniswapV3Pool {
         vec![self.token_a, self.token_b]
     }
 
+    fn decimals(&self) -> Vec<u8> {
+        vec![self.token_a_decimals, self.token_b_decimals]
+    }
+
     fn calculate_price(&self, base_token: Address, _quote_token: Address) -> Result<f64, AMMError> {
         let tick = uniswap_v3_math::tick_math::get_tick_at_sqrt_ratio(self.sqrt_price)?;
         let shift = self.token_a_decimals as i8 - self.token_b_decimals as i8;
@@ -872,7 +876,7 @@ impl UniswapV3Pool {
             //if the tick is between the tick lower and tick upper, update the liquidity between the ticks
             if self.tick >= tick_lower && self.tick < tick_upper {
                 self.liquidity = if liquidity_delta < 0 {
-                    self.liquidity.checked_sub((-liquidity_delta) as u128).unwrap_or(0)
+                    self.liquidity.saturating_sub((-liquidity_delta) as u128)
                 } else {
                     self.liquidity + (liquidity_delta as u128)
                 }
@@ -920,7 +924,7 @@ impl UniswapV3Pool {
         let liquidity_gross_before = info.liquidity_gross;
 
         let liquidity_gross_after = if liquidity_delta < 0 {
-            liquidity_gross_before.checked_sub((-liquidity_delta) as u128).unwrap_or(0)
+            liquidity_gross_before.saturating_sub((-liquidity_delta) as u128)
         } else {
             liquidity_gross_before + (liquidity_delta as u128)
         };

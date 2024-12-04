@@ -51,6 +51,9 @@ pub trait AutomatedMarketMaker {
     /// Returns a vector of tokens in the AMM.
     fn tokens(&self) -> Vec<Address>;
 
+    /// Returns a vector of tokens' decimals in the AMM.
+    fn decimals(&self) -> Vec<u8>;
+
     /// Calculates a f64 representation of base token price in the AMM.
     fn calculate_price(&self, base_token: Address, quote_token: Address) -> Result<f64, AMMError>;
 
@@ -153,6 +156,12 @@ macro_rules! amm {
             fn tokens(&self) -> Vec<Address> {
                 match self {
                     $(AMM::$pool_type(pool) => pool.tokens(),)+
+                }
+            }
+
+            fn decimals(&self) -> Vec<u8> {
+                match self {
+                    $(AMM::$pool_type(pool) => pool.decimals(),)+
                 }
             }
 

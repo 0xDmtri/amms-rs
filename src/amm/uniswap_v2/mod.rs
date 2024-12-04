@@ -112,6 +112,10 @@ impl AutomatedMarketMaker for UniswapV2Pool {
         vec![self.token_a, self.token_b]
     }
 
+    fn decimals(&self) -> Vec<u8> {
+        vec![self.token_a_decimals, self.token_b_decimals]
+    }
+
     fn simulate_swap(
         &self,
         base_token: Address,

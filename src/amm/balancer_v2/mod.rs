@@ -96,6 +96,11 @@ impl AutomatedMarketMaker for BalancerV2Pool {
         self.tokens.clone()
     }
 
+    /// Returns a vector of tokens' decimals in the AMM.
+    fn decimals(&self) -> Vec<u8> {
+        self.decimals.clone()
+    }
+
     /// Calculates a f64 representation of base token price in the AMM. This is a "tax inclusive" spot approximation.
     /// **********************************************************************************************
     /// calcSpotPrice                                                                             //
