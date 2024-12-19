@@ -7,11 +7,11 @@ use crate::{
 };
 use alloy::{
     network::Network,
-    primitives::{aliases::I24, Address, Bytes, B256, I256, U256},
+    primitives::{aliases::I24, keccak256, Address, Bytes, B256, I256, U256},
     providers::Provider,
     rpc::types::eth::{Filter, Log},
     sol,
-    sol_types::{SolCall, SolEvent},
+    sol_types::{SolCall, SolEvent, SolValue},
     transports::Transport,
 };
 use async_trait::async_trait;
@@ -59,6 +59,7 @@ pub struct UniswapV3Pool {
     pub liquidity: u128,
     pub sqrt_price: U256,
     pub fee: u32,
+    pub pool_key_hash: B256,
     pub tick: i32,
     pub tick_spacing: i32,
     pub tick_bitmap: HashMap<i16, U256>,
@@ -486,6 +487,7 @@ impl UniswapV3Pool {
             tick_spacing,
             tick_bitmap,
             ticks,
+            pool_key_hash: compute_pool_key_hash(token_a, token_b, fee),
         }
     }
 
@@ -517,6 +519,7 @@ impl UniswapV3Pool {
             fee: 0,
             tick_bitmap: HashMap::new(),
             ticks: HashMap::new(),
+            pool_key_hash: B256::default(),
         };
 
         // We need to get tick spacing before populating tick data because tick spacing can not be uninitialized when syncing burn and mint logs
@@ -590,6 +593,11 @@ impl UniswapV3Pool {
                 tick: 0,
                 tick_bitmap: HashMap::new(),
                 ticks: HashMap::new(),
+                pool_key_hash: compute_pool_key_hash(
+                    pool_created_event.token0,
+                    pool_created_event.token1,
+                    pool_created_event.fee.to(),
+                ),
             })
         } else {
             Err(EventLogError::InvalidEventSignature)
@@ -675,6 +683,11 @@ impl UniswapV3Pool {
     /// Returns the swap fee of the pool.
     pub fn fee(&self) -> u32 {
         self.fee
+    }
+
+    /// Returns the pool key hash of the pool.
+    pub fn pool_key_hash(&self) -> B256 {
+        self.pool_key_hash
     }
 
     /// Returns whether the pool data is populated.
@@ -1118,6 +1131,11 @@ impl UniswapV3Pool {
         .abi_encode()
         .into())
     }
+}
+
+#[inline]
+pub fn compute_pool_key_hash(token_a: Address, token_b: Address, fee: u32) -> B256 {
+    keccak256((token_a, token_b, fee).abi_encode())
 }
 
 pub struct CurrentState {

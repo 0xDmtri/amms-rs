@@ -1,6 +1,4 @@
 pub mod cache;
-#[cfg(feature = "artemis")]
-pub mod collector;
 pub mod error;
 
 use crate::{

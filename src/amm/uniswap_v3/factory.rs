@@ -19,7 +19,7 @@ use crate::{
     errors::{AMMError, EventLogError},
 };
 
-use super::{batch_request, IUniswapV3Pool, UniswapV3Pool};
+use super::{batch_request, compute_pool_key_hash, IUniswapV3Pool, UniswapV3Pool};
 
 sol! {
     /// Interface of the UniswapV3Factory contract
@@ -134,6 +134,11 @@ impl AutomatedMarketMakerFactory for UniswapV3Factory {
             token_a_decimals: 0,
             token_b_decimals: 0,
             fee: pool_created_event.fee.to::<u32>(),
+            pool_key_hash: compute_pool_key_hash(
+                pool_created_event.token0,
+                pool_created_event.token1,
+                pool_created_event.fee.to::<u32>(),
+            ),
             liquidity: 0,
             sqrt_price: U256::ZERO,
             tick_spacing: 0,

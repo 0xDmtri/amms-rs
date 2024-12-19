@@ -13,7 +13,7 @@ use crate::{
     errors::AMMError,
 };
 
-use super::UniswapV3Pool;
+use super::{compute_pool_key_hash, UniswapV3Pool};
 
 sol! {
     #[allow(missing_docs)]
@@ -80,6 +80,7 @@ where
     pool.tick = tick;
     pool.tick_spacing = tick_spacing;
     pool.fee = fee;
+    pool.pool_key_hash = compute_pool_key_hash(token_a, token_b, fee);
 
     Ok(())
 }
@@ -218,6 +219,7 @@ where
                 pool.tick = tick;
                 pool.tick_spacing = tick_spacing;
                 pool.fee = fee;
+                pool.pool_key_hash = compute_pool_key_hash(token_a, token_b, fee);
 
                 tracing::trace!(?pool);
             }

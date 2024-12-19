@@ -12,7 +12,6 @@ exclude = ["target/*", ".github/*", ".gitignore"]
 
 [dependencies]
 arraydeque = { version = "0.5", optional = true }
-# artemis-core = { git = "https://github.com/paradigmxyz/artemis.git", branch = "main", optional = true }
 async-trait = "0.1"
 eyre = "0.6"
 futures = "0.3"
@@ -38,9 +37,6 @@ rug = "1.26.1"
 [features]
 default = ["state-space"]
 state-space = ["arraydeque"]
-# TODO: Uncomment this when artemis is published as a crate
-# artemis = ["artemis-core"] 
-artemis = []
 
 [dev-dependencies]
 rand = "0.8.5"
