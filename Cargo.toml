@@ -24,7 +24,7 @@ thiserror = "2.0"
 tokio = { version = "1.42", default-features = false }
 tracing = "0.1"
 uniswap_v3_math = { git = "https://github.com/0xKitsune/uniswap-v3-math.git" }
-alloy = { version = "0.8", features = [
+alloy = { version = "0.9", features = [
     "contract",
     "network",
     "provider-ws",
@@ -45,7 +45,7 @@ criterion = "0.5"
 tokio = { version = "1.42", default-features = false, features = [
     "rt-multi-thread",
 ] }
-alloy = { version = "0.8", features = ["rpc-client"] }
+alloy = { version = "0.9", features = ["rpc-client"] }
 
 [[bench]]
 name = "state_space"
