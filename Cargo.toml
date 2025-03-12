@@ -21,10 +21,10 @@ regex = "1.11"
 serde = "1.0"
 serde_json = "1.0"
 thiserror = "2.0"
-tokio = { version = "1.42", default-features = false }
+tokio = { version = "1.44", default-features = false }
 tracing = "0.1"
 uniswap_v3_math = { git = "https://github.com/0xKitsune/uniswap-v3-math.git" }
-alloy = { version = "0.9", features = [
+alloy = { version = "0.12.5", features = [
     "contract",
     "network",
     "provider-ws",
@@ -32,20 +32,20 @@ alloy = { version = "0.9", features = [
     "signer-local",
 ] }
 
-rug = "1.26.1"
+rug = "1.27.0"
 
 [features]
 default = ["state-space"]
 state-space = ["arraydeque"]
 
 [dev-dependencies]
-rand = "0.8.5"
+rand = "0.9.0"
 tracing-subscriber = "0.3"
 criterion = "0.5"
-tokio = { version = "1.42", default-features = false, features = [
+tokio = { version = "1.44", default-features = false, features = [
     "rt-multi-thread",
 ] }
-alloy = { version = "0.9", features = ["rpc-client"] }
+alloy = { version = "0.12.5", features = ["rpc-client"] }
 
 [[bench]]
 name = "state_space"

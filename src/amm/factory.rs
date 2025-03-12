@@ -6,7 +6,6 @@ use alloy::{
     providers::Provider,
     rpc::types::eth::{Filter, Log},
     sol_types::SolEvent,
-    transports::Transport,
 };
 use async_trait::async_trait;
 use futures::stream::{FuturesUnordered, StreamExt};
@@ -29,28 +28,26 @@ pub trait AutomatedMarketMakerFactory {
     /// Gets all Pools from the factory created logs up to the `to_block` block number.
     ///
     /// Returns a vector of AMMs.
-    async fn get_all_amms<T, N, P>(
+    async fn get_all_amms<N, P>(
         &self,
         to_block: Option<u64>,
         provider: P,
         step: u64,
     ) -> Result<Vec<AMM>, AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone;
+        P: Provider<N> + Clone;
 
     /// Populates all AMMs data via batched static calls.
-    async fn populate_amm_data<T, N, P>(
+    async fn populate_amm_data<N, P>(
         &self,
         amms: &mut [AMM],
         block_number: Option<u64>,
         provider: P,
     ) -> Result<(), AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone;
+        P: Provider<N> + Clone;
 
     /// Returns the creation event signature for the factory.
     fn amm_created_event_signature(&self) -> B256;
@@ -61,11 +58,10 @@ pub trait AutomatedMarketMakerFactory {
     /// Creates a new AMM from a log factory creation event.
     ///
     /// Returns a AMM with data populated.
-    async fn new_amm_from_log<T, N, P>(&self, log: Log, provider: P) -> Result<AMM, AMMError>
+    async fn new_amm_from_log<N, P>(&self, log: Log, provider: P) -> Result<AMM, AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone;
+        P: Provider<N> + Clone;
 
     /// Creates a new empty AMM from a log factory creation event.
     fn new_empty_amm_from_log(&self, log: Log) -> Result<AMM, alloy::sol_types::Error>;
@@ -86,16 +82,15 @@ macro_rules! factory {
                 }
             }
 
-            async fn get_all_amms<T, N, P>(
+            async fn get_all_amms<N, P>(
                 &self,
                 to_block: Option<u64>,
                 provider: P,
                 step: u64,
             ) -> Result<Vec<AMM>, AMMError>
             where
-                T: Transport + Clone,
                 N: Network,
-                P: Provider<T, N> + Clone,
+                P: Provider<N> + Clone,
             {
                 match self {
                     $(Factory::$factory_type(factory) => {
@@ -104,16 +99,15 @@ macro_rules! factory {
                 }
             }
 
-            async fn populate_amm_data<T, N, P>(
+            async fn populate_amm_data<N, P>(
                 &self,
                 amms: &mut [AMM],
                 block_number: Option<u64>,
                 provider: P,
             ) -> Result<(), AMMError>
             where
-                T: Transport + Clone,
                 N: Network,
-                P: Provider<T, N> + Clone,
+                P: Provider<N> + Clone,
             {
                 match self {
                     $(Factory::$factory_type(factory) => {
@@ -134,15 +128,14 @@ macro_rules! factory {
                 }
             }
 
-            async fn new_amm_from_log<T, N, P>(
+            async fn new_amm_from_log<N, P>(
                 &self,
                 log: Log,
                 provider: P,
             ) -> Result<AMM, AMMError>
             where
-                T: Transport + Clone,
                 N: Network,
-                P: Provider<T, N> + Clone,
+                P: Provider<N> + Clone,
             {
                 match self {
                     $(Factory::$factory_type(factory) => factory.new_amm_from_log(log, provider).await,)+
@@ -175,7 +168,7 @@ macro_rules! factory {
 factory!(UniswapV2Factory, UniswapV3Factory, BalancerV2Factory);
 
 impl Factory {
-    pub async fn get_all_pools_from_logs<T, N, P>(
+    pub async fn get_all_pools_from_logs<N, P>(
         &self,
         mut from_block: u64,
         to_block: u64,
@@ -183,9 +176,8 @@ impl Factory {
         provider: P,
     ) -> Result<Vec<AMM>, AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         let factory_address = self.address();
         let amm_created_event_signature = self.amm_created_event_signature();

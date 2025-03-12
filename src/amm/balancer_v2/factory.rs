@@ -5,7 +5,6 @@ use alloy::{
     rpc::types::{Filter, Log},
     sol,
     sol_types::SolEvent,
-    transports::Transport,
 };
 use async_trait::async_trait;
 use futures::{stream::FuturesUnordered, StreamExt};
@@ -45,32 +44,30 @@ impl AutomatedMarketMakerFactory for BalancerV2Factory {
     /// Gets all Pools from the factory created logs up to the `to_block` block number.
     ///
     /// Returns a vector of AMMs.
-    async fn get_all_amms<T, N, P>(
+    async fn get_all_amms<N, P>(
         &self,
         to_block: Option<u64>,
         provider: P,
         step: u64,
     ) -> Result<Vec<AMM>, AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         let to = to_block.unwrap_or(provider.get_block_number().await?);
         Ok(self.get_all_pools_from_logs(to, step, provider).await?)
     }
 
     /// Populates all AMMs data via batched static calls.
-    async fn populate_amm_data<T, N, P>(
+    async fn populate_amm_data<N, P>(
         &self,
         amms: &mut [AMM],
         _block_number: Option<u64>,
         provider: P,
     ) -> Result<(), AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         // Max batch size for call
         let step = 127;
@@ -93,11 +90,10 @@ impl AutomatedMarketMakerFactory for BalancerV2Factory {
     /// Creates a new AMM from a log factory creation event.
     ///
     /// Returns a AMM with data populated.
-    async fn new_amm_from_log<T, N, P>(&self, log: Log, provider: P) -> Result<AMM, AMMError>
+    async fn new_amm_from_log<N, P>(&self, log: Log, provider: P) -> Result<AMM, AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         let mut pool = self.new_empty_amm_from_log(log)?;
         pool.populate_data(None, provider).await?;
@@ -117,16 +113,15 @@ impl AutomatedMarketMakerFactory for BalancerV2Factory {
 
 impl BalancerV2Factory {
     // Function to get all pair created events for a given Dex factory address and sync pool data
-    pub async fn get_all_pools_from_logs<T, N, P>(
+    pub async fn get_all_pools_from_logs<N, P>(
         self,
         to_block: u64,
         step: u64,
         provider: P,
     ) -> Result<Vec<AMM>, AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         // Unwrap can be used here because the creation block was verified within `Dex::new()`
         let mut from_block = self.creation_block;

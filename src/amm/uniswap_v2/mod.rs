@@ -12,7 +12,6 @@ use alloy::{
     rpc::types::eth::Log,
     sol,
     sol_types::{SolCall, SolEvent},
-    transports::Transport,
 };
 use async_trait::async_trait;
 use num_bigfloat::BigFloat;
@@ -55,11 +54,10 @@ impl AutomatedMarketMaker for UniswapV2Pool {
     }
 
     #[instrument(skip(self, provider), level = "debug")]
-    async fn sync<T, N, P>(&mut self, provider: P) -> Result<(), AMMError>
+    async fn sync<N, P>(&mut self, provider: P) -> Result<(), AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         let (reserve_0, reserve_1) = self.get_reserves(provider.clone()).await?;
         tracing::debug!(?reserve_0, ?reserve_1, address = ?self.address, "UniswapV2 sync event");
@@ -71,15 +69,14 @@ impl AutomatedMarketMaker for UniswapV2Pool {
     }
 
     #[instrument(skip(self, provider), level = "debug")]
-    async fn populate_data<T, N, P>(
+    async fn populate_data<N, P>(
         &mut self,
         _block_number: Option<u64>,
         provider: P,
     ) -> Result<(), AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         batch_request::get_v2_pool_data_batch_request(self, provider.clone()).await?;
 
@@ -206,16 +203,15 @@ impl UniswapV2Pool {
     }
 
     /// Creates a new instance of the pool from the pair address, and syncs the pool data.
-    pub async fn new_from_address<T, N, P>(
+    pub async fn new_from_address<N, P>(
         pair_address: Address,
         factory_address: Option<Address>,
         fee: u32,
         provider: P,
     ) -> Result<Self, AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         let mut pool = UniswapV2Pool {
             address: pair_address,
@@ -241,11 +237,10 @@ impl UniswapV2Pool {
     /// Creates a new instance of a the pool from a `PairCreated` event log.
     ///
     /// This method syncs the pool data.
-    pub async fn new_from_log<T, N, P>(log: Log, fee: u32, provider: P) -> Result<Self, AMMError>
+    pub async fn new_from_log<N, P>(log: Log, fee: u32, provider: P) -> Result<Self, AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         let event_signature = log.data().topics()[0];
 
@@ -304,11 +299,10 @@ impl UniswapV2Pool {
     }
 
     /// Returns the reserves of the pool.
-    pub async fn get_reserves<T, N, P>(&self, provider: P) -> Result<(u128, u128), AMMError>
+    pub async fn get_reserves<N, P>(&self, provider: P) -> Result<(u128, u128), AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         tracing::trace!("getting reserves of {}", self.address);
 
@@ -351,11 +345,10 @@ impl UniswapV2Pool {
         Ok(sync_event)
     }
 
-    pub async fn get_token_decimals<T, N, P>(&mut self, provider: P) -> Result<(u8, u8), AMMError>
+    pub async fn get_token_decimals<N, P>(&mut self, provider: P) -> Result<(u8, u8), AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         let IErc20::decimalsReturn {
             _0: token_a_decimals,
@@ -376,15 +369,14 @@ impl UniswapV2Pool {
         Ok((token_a_decimals, token_b_decimals))
     }
 
-    pub async fn get_token_0<T, N, P>(
+    pub async fn get_token_0<N, P>(
         &self,
         pair_address: Address,
         provider: P,
     ) -> Result<Address, AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         let v2_pair = IUniswapV2Pair::new(pair_address, provider);
 
@@ -396,15 +388,14 @@ impl UniswapV2Pool {
         Ok(token0)
     }
 
-    pub async fn get_token_1<T, N, P>(
+    pub async fn get_token_1<N, P>(
         &self,
         pair_address: Address,
         provider: P,
     ) -> Result<Address, AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         let v2_pair = IUniswapV2Pair::new(pair_address, provider);
 

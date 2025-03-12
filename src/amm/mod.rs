@@ -13,7 +13,6 @@ use alloy::{
     providers::Provider,
     rpc::types::eth::Log,
     sol,
-    transports::Transport,
 };
 use async_trait::async_trait;
 use balancer_v2::BalancerV2Pool;
@@ -39,11 +38,10 @@ pub trait AutomatedMarketMaker {
     fn address(&self) -> Address;
 
     /// Syncs the AMM data on chain via batched static calls.
-    async fn sync<T, N, P>(&mut self, provider: P) -> Result<(), AMMError>
+    async fn sync<N, P>(&mut self, provider: P) -> Result<(), AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone;
+        P: Provider<N> + Clone;
 
     /// Returns the vector of event signatures subscribed to when syncing the AMM.
     fn sync_on_event_signatures(&self) -> Vec<B256>;
@@ -61,15 +59,14 @@ pub trait AutomatedMarketMaker {
     fn sync_from_log(&mut self, log: Log) -> Result<(), AMMError>;
 
     /// Populates the AMM data via batched static calls.
-    async fn populate_data<T, N, P>(
+    async fn populate_data<N, P>(
         &mut self,
         block_number: Option<u64>,
         provider: P,
     ) -> Result<(), AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone;
+        P: Provider<N> + Clone;
 
     /// Locally simulates a swap in the AMM.
     ///
@@ -107,11 +104,10 @@ macro_rules! amm {
                 }
             }
 
-            async fn sync<T, N, P>(&mut self, provider: P) -> Result<(), AMMError>
+            async fn sync<N, P>(&mut self, provider: P) -> Result<(), AMMError>
             where
-                T: Transport + Clone,
                 N: Network,
-                P: Provider<T, N> + Clone,
+                P: Provider<N> + Clone,
             {
                 match self {
                     $(AMM::$pool_type(pool) => pool.sync(provider).await,)+
@@ -142,11 +138,10 @@ macro_rules! amm {
                 }
             }
 
-            async fn populate_data<T, N, P>(&mut self, block_number: Option<u64>, provider: P) -> Result<(), AMMError>
+            async fn populate_data<N, P>(&mut self, block_number: Option<u64>, provider: P) -> Result<(), AMMError>
             where
-                T: Transport + Clone,
                 N: Network,
-                P: Provider<T, N> + Clone,
+                P: Provider<N> + Clone,
             {
                 match self {
                     $(AMM::$pool_type(pool) => pool.populate_data(block_number, provider).await,)+

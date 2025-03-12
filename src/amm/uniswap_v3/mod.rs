@@ -12,7 +12,6 @@ use alloy::{
     rpc::types::eth::{Filter, Log},
     sol,
     sol_types::{SolCall, SolEvent, SolValue},
-    transports::Transport,
 };
 use async_trait::async_trait;
 use futures::{stream::FuturesOrdered, StreamExt};
@@ -90,11 +89,10 @@ impl AutomatedMarketMaker for UniswapV3Pool {
     }
 
     #[instrument(skip(self, provider), level = "debug")]
-    async fn sync<T, N, P>(&mut self, provider: P) -> Result<(), AMMError>
+    async fn sync<N, P>(&mut self, provider: P) -> Result<(), AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         batch_request::sync_v3_pool_batch_request(self, provider.clone()).await?;
         Ok(())
@@ -151,15 +149,14 @@ impl AutomatedMarketMaker for UniswapV3Pool {
         }
     }
     // NOTE: This function will not populate the tick_bitmap and ticks, if you want to populate those, you must call populate_tick_data on an initialized pool
-    async fn populate_data<T, N, P>(
+    async fn populate_data<N, P>(
         &mut self,
         block_number: Option<u64>,
         provider: P,
     ) -> Result<(), AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         batch_request::get_v3_pool_data_batch_request(self, block_number, provider.clone()).await?;
         Ok(())
@@ -494,16 +491,15 @@ impl UniswapV3Pool {
     /// Creates a new instance of the pool from the pair address.
     ///
     /// This function will populate all pool data.
-    pub async fn new_from_address<T, N, P>(
+    pub async fn new_from_address<N, P>(
         pair_address: Address,
         factory_address: Option<Address>,
         creation_block: u64,
         provider: P,
     ) -> Result<Self, AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         let mut pool = UniswapV3Pool {
             address: pair_address,
@@ -542,11 +538,10 @@ impl UniswapV3Pool {
     /// Creates a new instance of the pool from a log.
     ///
     /// This function will populate all pool data.
-    pub async fn new_from_log<T, N, P>(log: Log, provider: P) -> Result<Self, AMMError>
+    pub async fn new_from_log<N, P>(log: Log, provider: P) -> Result<Self, AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         let event_signature = log.topics()[0];
 
@@ -607,15 +602,14 @@ impl UniswapV3Pool {
     /// Populates the `tick_bitmap` and `ticks` fields of the pool to the current block.
     ///
     /// Returns the last synced block number.
-    pub async fn populate_tick_data<T, N, P>(
+    pub async fn populate_tick_data<N, P>(
         &mut self,
         mut from_block: u64,
         provider: P,
     ) -> Result<u64, AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         let current_block = provider
             .get_block_number()
@@ -696,11 +690,10 @@ impl UniswapV3Pool {
     }
 
     /// Returns the word position of a tick in the `tick_bitmap`.
-    pub async fn get_tick_word<T, N, P>(&self, tick: i32, provider: P) -> Result<U256, AMMError>
+    pub async fn get_tick_word<N, P>(&self, tick: i32, provider: P) -> Result<U256, AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         let v3_pool = IUniswapV3Pool::new(self.address, provider);
         let (word_position, _) = uniswap_v3_math::tick_bitmap::position(tick);
@@ -710,15 +703,14 @@ impl UniswapV3Pool {
     }
 
     /// Returns the next word in the `tick_bitmap` after a given word position.
-    pub async fn get_next_word<T, N, P>(
+    pub async fn get_next_word<N, P>(
         &self,
         word_position: i16,
         provider: P,
     ) -> Result<U256, AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         let v3_pool = IUniswapV3Pool::new(self.address, provider);
         let IUniswapV3Pool::tickBitmapReturn { _0: bm } =
@@ -727,11 +719,10 @@ impl UniswapV3Pool {
     }
 
     /// Returns the tick spacing of the pool.
-    pub async fn get_tick_spacing<T, N, P>(&self, provider: P) -> Result<i32, AMMError>
+    pub async fn get_tick_spacing<N, P>(&self, provider: P) -> Result<i32, AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         let v3_pool = IUniswapV3Pool::new(self.address, provider);
         let IUniswapV3Pool::tickSpacingReturn { _0: ts } = v3_pool.tickSpacing().call().await?;
@@ -739,25 +730,23 @@ impl UniswapV3Pool {
     }
 
     /// Fetches the current tick of the pool via static call.
-    pub async fn get_tick<T, N, P>(&self, provider: P) -> Result<i32, AMMError>
+    pub async fn get_tick<N, P>(&self, provider: P) -> Result<i32, AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         Ok(self.get_slot_0(provider).await?.1)
     }
 
     /// Fetches the tick info of a given tick via static call.
-    pub async fn get_tick_info<T, N, P>(
+    pub async fn get_tick_info<N, P>(
         &self,
         tick: i32,
         provider: P,
     ) -> Result<(u128, i128, U256, U256, i64, U256, u32, bool), AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         let v3_pool = IUniswapV3Pool::new(self.address, provider.clone());
 
@@ -776,36 +765,33 @@ impl UniswapV3Pool {
     }
 
     /// Fetches `liquidity_net` at a given tick via static call.
-    pub async fn get_liquidity_net<T, N, P>(&self, tick: i32, provider: P) -> Result<i128, AMMError>
+    pub async fn get_liquidity_net<N, P>(&self, tick: i32, provider: P) -> Result<i128, AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         let tick_info = self.get_tick_info(tick, provider).await?;
         Ok(tick_info.1)
     }
 
     /// Fetches whether a specified tick is initialized via static call.
-    pub async fn get_initialized<T, N, P>(&self, tick: i32, provider: P) -> Result<bool, AMMError>
+    pub async fn get_initialized<N, P>(&self, tick: i32, provider: P) -> Result<bool, AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         let tick_info = self.get_tick_info(tick, provider).await?;
         Ok(tick_info.7)
     }
 
     /// Fetches the current slot 0 of the pool via static call.
-    pub async fn get_slot_0<T, N, P>(
+    pub async fn get_slot_0<N, P>(
         &self,
         provider: P,
     ) -> Result<(U256, i32, u16, u16, u16, u8, bool), AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         let v3_pool = IUniswapV3Pool::new(self.address, provider);
         let IUniswapV3Pool::slot0Return {
@@ -822,11 +808,10 @@ impl UniswapV3Pool {
     }
 
     /// Fetches the current liquidity of the pool via static call.
-    pub async fn get_liquidity<T, N, P>(&self, provider: P) -> Result<u128, AMMError>
+    pub async fn get_liquidity<N, P>(&self, provider: P) -> Result<u128, AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         let v3_pool = IUniswapV3Pool::new(self.address, provider);
         let IUniswapV3Pool::liquidityReturn { _0: liquidity } = v3_pool.liquidity().call().await?;
@@ -834,11 +819,10 @@ impl UniswapV3Pool {
     }
 
     /// Fetches the current sqrt price of the pool via static call.
-    pub async fn get_sqrt_price<T, N, P>(&self, provider: P) -> Result<U256, AMMError>
+    pub async fn get_sqrt_price<N, P>(&self, provider: P) -> Result<U256, AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         Ok(self.get_slot_0(provider).await?.0)
     }
@@ -988,11 +972,10 @@ impl UniswapV3Pool {
         Ok(swap_event)
     }
 
-    pub async fn get_token_decimals<T, N, P>(&mut self, provider: P) -> Result<(u8, u8), AMMError>
+    pub async fn get_token_decimals<N, P>(&mut self, provider: P) -> Result<(u8, u8), AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         let IErc20::decimalsReturn {
             _0: token_a_decimals,
@@ -1011,11 +994,10 @@ impl UniswapV3Pool {
         Ok((token_a_decimals, token_b_decimals))
     }
 
-    pub async fn get_fee<T, N, P>(&mut self, provider: P) -> Result<u32, AMMError>
+    pub async fn get_fee<N, P>(&mut self, provider: P) -> Result<u32, AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         let IUniswapV3Pool::feeReturn { _0: fee } = IUniswapV3Pool::new(self.address, provider)
             .fee()
@@ -1025,11 +1007,10 @@ impl UniswapV3Pool {
         Ok(fee.to())
     }
 
-    pub async fn get_token_0<T, N, P>(&self, provider: P) -> Result<Address, AMMError>
+    pub async fn get_token_0<N, P>(&self, provider: P) -> Result<Address, AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         let v3_pool = IUniswapV3Pool::new(self.address, provider);
 
@@ -1041,11 +1022,10 @@ impl UniswapV3Pool {
         Ok(token_0)
     }
 
-    pub async fn get_token_1<T, N, P>(&self, provider: P) -> Result<Address, AMMError>
+    pub async fn get_token_1<N, P>(&self, provider: P) -> Result<Address, AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         let v3_pool = IUniswapV3Pool::new(self.address, provider);
 
@@ -1187,11 +1167,10 @@ mod test {
         }
     }
 
-    async fn initialize_usdc_weth_pool<T, N, P>(provider: P) -> eyre::Result<(UniswapV3Pool, u64)>
+    async fn initialize_usdc_weth_pool<N, P>(provider: P) -> eyre::Result<(UniswapV3Pool, u64)>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         let mut pool = UniswapV3Pool {
             address: address!("88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640"),
@@ -1208,11 +1187,10 @@ mod test {
         Ok((pool, synced_block))
     }
 
-    async fn initialize_weth_link_pool<T, N, P>(provider: P) -> eyre::Result<(UniswapV3Pool, u64)>
+    async fn initialize_weth_link_pool<N, P>(provider: P) -> eyre::Result<(UniswapV3Pool, u64)>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         let mut pool = UniswapV3Pool {
             address: address!("a6Cc3C2531FdaA6Ae1A3CA84c2855806728693e8"),

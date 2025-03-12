@@ -7,7 +7,6 @@ use alloy::{
     rpc::types::eth::{Filter, Log},
     sol,
     sol_types::SolEvent,
-    transports::Transport,
 };
 use async_trait::async_trait;
 use futures::{stream::FuturesOrdered, StreamExt};
@@ -53,11 +52,10 @@ impl AutomatedMarketMakerFactory for UniswapV3Factory {
         IUniswapV3Factory::PoolCreated::SIGNATURE_HASH
     }
 
-    async fn new_amm_from_log<T, N, P>(&self, log: Log, provider: P) -> Result<AMM, AMMError>
+    async fn new_amm_from_log<N, P>(&self, log: Log, provider: P) -> Result<AMM, AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         if let Some(block_number) = log.block_number {
             let pool_created_filter = IUniswapV3Factory::PoolCreated::decode_log(&log.inner, true)?;
@@ -75,16 +73,15 @@ impl AutomatedMarketMakerFactory for UniswapV3Factory {
         }
     }
 
-    async fn get_all_amms<T, N, P>(
+    async fn get_all_amms<N, P>(
         &self,
         to_block: Option<u64>,
         provider: P,
         step: u64,
     ) -> Result<Vec<AMM>, AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         if let Some(block) = to_block {
             self.get_all_pools_from_logs(block, step, provider).await
@@ -94,16 +91,15 @@ impl AutomatedMarketMakerFactory for UniswapV3Factory {
     }
 
     #[instrument(skip(self, amms, provider) level = "debug")]
-    async fn populate_amm_data<T, N, P>(
+    async fn populate_amm_data<N, P>(
         &self,
         amms: &mut [AMM],
         block_number: Option<u64>,
         provider: P,
     ) -> Result<(), AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         if let Some(block_number) = block_number {
             // Max batch size for call
@@ -158,16 +154,15 @@ impl UniswapV3Factory {
     }
 
     // Function to get all pair created events for a given Dex factory address and sync pool data
-    pub async fn get_all_pools_from_logs<T, N, P>(
+    pub async fn get_all_pools_from_logs<N, P>(
         self,
         to_block: u64,
         step: u64,
         provider: P,
     ) -> Result<Vec<AMM>, AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         // Unwrap can be used here because the creation block was verified within `Dex::new()`
         let mut from_block = self.creation_block;

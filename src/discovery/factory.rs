@@ -8,7 +8,6 @@ use alloy::{
     providers::Provider,
     rpc::types::eth::Filter,
     sol_types::SolEvent,
-    transports::Transport,
 };
 
 use crate::{
@@ -36,16 +35,15 @@ impl DiscoverableFactory {
 }
 
 // Returns a vec of empty factories that match one of the Factory interfaces specified by each DiscoverableFactory
-pub async fn discover_factories<T, N, P>(
+pub async fn discover_factories<N, P>(
     factories: Vec<DiscoverableFactory>,
     number_of_amms_threshold: u64,
     provider: P,
     block_step: u64,
 ) -> Result<Vec<Factory>, AMMError>
 where
-    T: Transport + Clone + 'static,
     N: Network + 'static,
-    P: Provider<T, N> + Clone + Send + Sync + 'static,
+    P: Provider<N> + Clone + Send + Sync + 'static,
 {
     let mut event_signatures = vec![];
 
@@ -124,16 +122,15 @@ where
     Ok(filtered_factories)
 }
 
-async fn process_block_logs_batch<T, N, P>(
+async fn process_block_logs_batch<N, P>(
     from_block: &u64,
     target_block: &u64,
     provider: P,
     block_filter: &Filter,
 ) -> Result<HashMap<Address, (Factory, u64)>, AMMError>
 where
-    T: Transport + Clone,
     N: Network,
-    P: Provider<T, N> + Clone,
+    P: Provider<N> + Clone,
 {
     let block_filter = block_filter.clone();
     let mut local_identified_factories: HashMap<Address, (Factory, u64)> = HashMap::new();

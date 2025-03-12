@@ -11,7 +11,6 @@ use alloy::{
     primitives::{Address, FixedBytes},
     providers::Provider,
     rpc::types::eth::{Filter, Log},
-    transports::Transport,
 };
 use cache::StateChangeCache;
 use error::StateSpaceError;
@@ -67,18 +66,17 @@ impl From<Vec<AMM>> for StateSpace {
 }
 
 #[derive(Debug)]
-pub struct StateSpaceManager<T, N, P, const CAP: usize> {
+pub struct StateSpaceManager<N, P, const CAP: usize> {
     state: Arc<RwLock<StateSpace>>,
     state_change_cache: Arc<RwLock<StateChangeCache<CAP>>>,
     provider: P,
-    phantom: PhantomData<(T, N)>,
+    phantom: PhantomData<N>,
 }
 
-impl<T, N, P> StateSpaceManager<T, N, P, 30>
+impl<N, P> StateSpaceManager<N, P, 30>
 where
-    T: Transport + Clone,
     N: Network,
-    P: Provider<T, N> + Clone + 'static,
+    P: Provider<N> + Clone + 'static,
 {
     pub fn new(amms: Vec<AMM>, provider: P) -> Self {
         Self {
@@ -221,11 +219,10 @@ where
     }
 }
 
-impl<T, N, P, const CAP: usize> StateSpaceManager<T, N, P, CAP>
+impl<N, P, const CAP: usize> StateSpaceManager<N, P, CAP>
 where
-    T: Transport + Clone,
     N: Network,
-    P: Provider<T, N> + Clone + 'static,
+    P: Provider<N> + Clone + 'static,
 {
     pub fn new_with_capacity(amms: Vec<AMM>, provider: P) -> Self {
         Self {

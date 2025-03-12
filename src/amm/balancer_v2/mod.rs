@@ -10,7 +10,6 @@ use alloy::{
     rpc::types::Log,
     sol,
     sol_types::SolEvent,
-    transports::Transport,
 };
 use async_trait::async_trait;
 use bmath::u256_to_float;
@@ -76,11 +75,10 @@ impl AutomatedMarketMaker for BalancerV2Pool {
 
     /// Syncs the AMM data on chain via batched static calls.
     #[instrument(skip(self, provider), level = "debug")]
-    async fn sync<T, N, P>(&mut self, provider: P) -> Result<(), AMMError>
+    async fn sync<N, P>(&mut self, provider: P) -> Result<(), AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         // Tokens can change, so we are saving a request here.
         self.populate_data(None, provider).await
@@ -168,15 +166,14 @@ impl AutomatedMarketMaker for BalancerV2Pool {
     }
 
     /// Populates the AMM data via batched static calls.
-    async fn populate_data<T, N, P>(
+    async fn populate_data<N, P>(
         &mut self,
         block_number: Option<u64>,
         provider: P,
     ) -> Result<(), AMMError>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Clone,
+        P: Provider<N> + Clone,
     {
         Ok(
             batch_request::get_balancer_v2_pool_data_batch_request(self, block_number, provider)

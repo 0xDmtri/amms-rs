@@ -4,7 +4,6 @@ use alloy::{
     providers::Provider,
     sol,
     sol_types::SolValue,
-    transports::Transport,
 };
 
 use crate::{
@@ -30,7 +29,7 @@ sol! {
 ///
 /// This function uses batched static calls to get the WETH value in each AMM.
 /// Returns a vector of filtered AMMs.
-pub async fn filter_amms_below_usd_threshold<T, N, P>(
+pub async fn filter_amms_below_usd_threshold<N, P>(
     amms: Vec<AMM>,
     factories: &[Factory],
     usd_weth_pool: AMM,
@@ -42,9 +41,8 @@ pub async fn filter_amms_below_usd_threshold<T, N, P>(
     provider: P,
 ) -> Result<Vec<AMM>, AMMError>
 where
-    T: Transport + Clone,
     N: Network,
-    P: Provider<T, N> + Clone,
+    P: Provider<N> + Clone,
 {
     let weth_usd_price = usd_weth_pool.calculate_price(weth, usdc)?;
 
@@ -77,7 +75,7 @@ where
 ///
 /// This function uses batched static calls to get the WETH value in each AMM.
 /// Returns a vector of filtered AMMs.
-pub async fn filter_amms_below_weth_threshold<T, N, P>(
+pub async fn filter_amms_below_weth_threshold<N, P>(
     amms: Vec<AMM>,
     factories: &[Factory],
     weth: Address,
@@ -87,9 +85,8 @@ pub async fn filter_amms_below_weth_threshold<T, N, P>(
     provider: P,
 ) -> Result<Vec<AMM>, AMMError>
 where
-    T: Transport + Clone,
     N: Network,
-    P: Provider<T, N> + Clone,
+    P: Provider<N> + Clone,
 {
     let mut filtered_amms = vec![];
 
@@ -113,7 +110,7 @@ where
     Ok(filtered_amms)
 }
 
-pub async fn get_weth_values_in_amms<T, N, P>(
+pub async fn get_weth_values_in_amms<N, P>(
     amms: &[AMM],
     factories: &[Factory],
     weth: Address,
@@ -122,9 +119,8 @@ pub async fn get_weth_values_in_amms<T, N, P>(
     provider: P,
 ) -> Result<Vec<U256>, AMMError>
 where
-    T: Transport + Clone,
     N: Network,
-    P: Provider<T, N> + Clone,
+    P: Provider<N> + Clone,
 {
     // init a new vec to hold the filtered pools
     let mut aggregate_weth_values_in_amms = vec![];
@@ -157,7 +153,7 @@ where
     Ok(aggregate_weth_values_in_amms)
 }
 
-async fn get_weth_value_in_amm_batch_request<T, N, P>(
+async fn get_weth_value_in_amm_batch_request<N, P>(
     amms: &[AMM],
     factories: &[Factory],
     weth: Address,
@@ -165,9 +161,8 @@ async fn get_weth_value_in_amm_batch_request<T, N, P>(
     provider: P,
 ) -> Result<Vec<U256>, AMMError>
 where
-    T: Transport + Clone,
     N: Network,
-    P: Provider<T, N> + Clone,
+    P: Provider<N> + Clone,
 {
     let amms = amms.iter().map(|a| a.address()).collect::<Vec<Address>>();
 

@@ -4,7 +4,6 @@ use alloy::{
     providers::Provider,
     sol,
     sol_types::SolValue,
-    transports::Transport,
 };
 
 use crate::{
@@ -21,15 +20,14 @@ sol! {
     "src/amm/balancer_v2/batch_request/GetBalancerV2PoolDataBatchRequest.json"
 }
 
-pub async fn get_balancer_v2_pool_data_batch_request<T, N, P>(
+pub async fn get_balancer_v2_pool_data_batch_request<N, P>(
     pool: &mut BalancerV2Pool,
     block_number: Option<u64>,
     provider: P,
 ) -> Result<(), AMMError>
 where
-    T: Transport + Clone,
     N: Network,
-    P: Provider<T, N> + Clone,
+    P: Provider<N> + Clone,
 {
     let deployer = IGetBalancerV2PoolDataBatchRequest::deploy_builder(provider, vec![pool.address]);
     let res = if let Some(block_number) = block_number {
@@ -59,14 +57,10 @@ where
     Ok(())
 }
 
-pub async fn get_amm_data_batch_request<T, N, P>(
-    amms: &mut [AMM],
-    provider: P,
-) -> Result<(), AMMError>
+pub async fn get_amm_data_batch_request<N, P>(amms: &mut [AMM], provider: P) -> Result<(), AMMError>
 where
-    T: Transport + Clone,
     N: Network,
-    P: Provider<T, N> + Clone,
+    P: Provider<N> + Clone,
 {
     let deployer = IGetBalancerV2PoolDataBatchRequest::deploy_builder(
         provider,
