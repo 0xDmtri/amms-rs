@@ -2,8 +2,9 @@ pub mod checkpoint;
 
 use crate::{
     amm::{
+        AMM, AutomatedMarketMaker,
         factory::{AutomatedMarketMakerFactory, Factory},
-        uniswap_v2, uniswap_v3, AutomatedMarketMaker, AMM,
+        uniswap_v2, uniswap_v3,
     },
     errors::AMMError,
     filters,
@@ -59,7 +60,7 @@ where
             // If the factory is UniswapV2, set the fee for each pool according to the factory fee
             if let Factory::UniswapV2Factory(factory) = factory {
                 for amm in amms.iter_mut() {
-                    if let AMM::UniswapV2Pool(ref mut pool) = amm {
+                    if let AMM::UniswapV2Pool(pool) = amm {
                         pool.fee = factory.fee;
                     }
                 }
