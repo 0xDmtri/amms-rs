@@ -13,15 +13,15 @@ use alloy::{
 };
 use async_trait::async_trait;
 use bmath::u256_to_float;
-use rug::{float::Round, Float};
+use rug::{Float, float::Round};
 use serde::{Deserialize, Serialize};
 use tracing::instrument;
 
 use crate::errors::{AMMError, ArithmeticError, EventLogError, SwapSimulationError};
 
 use super::{
-    consts::{BONE, MPFR_T_PRECISION},
     AutomatedMarketMaker,
+    consts::{BONE, MPFR_T_PRECISION},
 };
 
 sol! {
@@ -307,7 +307,7 @@ impl BalancerV2Pool {
         &mut self,
         log: Log,
     ) -> Result<alloy::primitives::Log<IBPool::LOG_SWAP>, EventLogError> {
-        let swap_event = IBPool::LOG_SWAP::decode_log(log.as_ref(), true)?;
+        let swap_event = IBPool::LOG_SWAP::decode_log(log.as_ref())?;
 
         let token_in_index = self
             .tokens
@@ -335,11 +335,11 @@ mod tests {
     use std::{str::FromStr, sync::Arc};
 
     use alloy::{
-        primitives::{address, U256},
+        primitives::{U256, address},
         providers::ProviderBuilder,
     };
 
-    use crate::amm::{balancer_v2::IBPool::IBPoolInstance, AutomatedMarketMaker};
+    use crate::amm::{AutomatedMarketMaker, balancer_v2::IBPool::IBPoolInstance};
 
     #[tokio::test]
     pub async fn test_populate_data() {
@@ -348,7 +348,7 @@ mod tests {
             ..Default::default()
         };
         let provider = Arc::new(
-            ProviderBuilder::new().on_http(env!("ETHEREUM_RPC_ENDPOINT").parse().unwrap()),
+            ProviderBuilder::new().connect_http(env!("ETHEREUM_RPC_ENDPOINT").parse().unwrap()),
         );
         balancer_v2_pool
             .populate_data(Some(20487793), provider.clone())
@@ -376,7 +376,7 @@ mod tests {
     #[tokio::test]
     pub async fn test_calculate_price() {
         let provider = Arc::new(
-            ProviderBuilder::new().on_http(env!("ETHEREUM_RPC_ENDPOINT").parse().unwrap()),
+            ProviderBuilder::new().connect_http(env!("ETHEREUM_RPC_ENDPOINT").parse().unwrap()),
         );
         let mut balancer_v2_pool = super::BalancerV2Pool {
             address: address!("8a649274E4d777FFC6851F13d23A86BBFA2f2Fbf"),
@@ -400,7 +400,7 @@ mod tests {
     #[tokio::test]
     pub async fn test_simulate_swap() {
         let provider = Arc::new(
-            ProviderBuilder::new().on_http(env!("ETHEREUM_RPC_ENDPOINT").parse().unwrap()),
+            ProviderBuilder::new().connect_http(env!("ETHEREUM_RPC_ENDPOINT").parse().unwrap()),
         );
         let mut balancer_v2_pool = super::BalancerV2Pool {
             address: address!("8a649274E4d777FFC6851F13d23A86BBFA2f2Fbf"),
@@ -440,6 +440,6 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(calculated, expected._0);
+        assert_eq!(calculated, expected);
     }
 }

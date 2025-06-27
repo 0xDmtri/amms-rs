@@ -2,12 +2,12 @@ pub mod batch_request;
 pub mod factory;
 
 use crate::{
-    amm::{consts::*, AutomatedMarketMaker, IErc20},
+    amm::{AutomatedMarketMaker, IErc20, consts::*},
     errors::{AMMError, ArithmeticError, EventLogError},
 };
 use alloy::{
     network::Network,
-    primitives::{Address, Bytes, B256, U256},
+    primitives::{Address, B256, Bytes, U256},
     providers::Provider,
     rpc::types::eth::Log,
     sol,
@@ -246,7 +246,7 @@ impl UniswapV2Pool {
 
         if event_signature == IUniswapV2Factory::PairCreated::SIGNATURE_HASH {
             let pair_created_event =
-                factory::IUniswapV2Factory::PairCreated::decode_log(log.as_ref(), true)?;
+                factory::IUniswapV2Factory::PairCreated::decode_log(log.as_ref())?;
             UniswapV2Pool::new_from_address(
                 pair_created_event.pair,
                 Some(log.address()),
@@ -267,7 +267,7 @@ impl UniswapV2Pool {
 
         if event_signature == IUniswapV2Factory::PairCreated::SIGNATURE_HASH {
             let pair_created_event =
-                factory::IUniswapV2Factory::PairCreated::decode_log(log.as_ref(), true)?;
+                factory::IUniswapV2Factory::PairCreated::decode_log(log.as_ref())?;
 
             Ok(UniswapV2Pool {
                 address: pair_created_event.pair,
@@ -330,7 +330,7 @@ impl UniswapV2Pool {
         &mut self,
         log: Log,
     ) -> Result<alloy::primitives::Log<IUniswapV2Pair::Sync>, EventLogError> {
-        let sync_event = IUniswapV2Pair::Sync::decode_log(log.as_ref(), true)?;
+        let sync_event = IUniswapV2Pair::Sync::decode_log(log.as_ref())?;
 
         let (reserve_0, reserve_1) = (
             sync_event.reserve0.to::<u128>(),
@@ -350,16 +350,12 @@ impl UniswapV2Pool {
         N: Network,
         P: Provider<N> + Clone,
     {
-        let IErc20::decimalsReturn {
-            _0: token_a_decimals,
-        } = IErc20::new(self.token_a, provider.clone())
+        let token_a_decimals = IErc20::new(self.token_a, provider.clone())
             .decimals()
             .call()
             .await?;
 
-        let IErc20::decimalsReturn {
-            _0: token_b_decimals,
-        } = IErc20::new(self.token_b, provider)
+        let token_b_decimals = IErc20::new(self.token_b, provider)
             .decimals()
             .call()
             .await?;
@@ -380,7 +376,7 @@ impl UniswapV2Pool {
     {
         let v2_pair = IUniswapV2Pair::new(pair_address, provider);
 
-        let IUniswapV2Pair::token0Return { _0: token0 } = match v2_pair.token0().call().await {
+        let token0 = match v2_pair.token0().call().await {
             Ok(result) => result,
             Err(contract_error) => return Err(AMMError::ContractError(contract_error)),
         };
@@ -399,7 +395,7 @@ impl UniswapV2Pool {
     {
         let v2_pair = IUniswapV2Pair::new(pair_address, provider);
 
-        let IUniswapV2Pair::token1Return { _0: token1 } = match v2_pair.token1().call().await {
+        let token1 = match v2_pair.token1().call().await {
             Ok(result) => result,
             Err(contract_error) => return Err(AMMError::ContractError(contract_error)),
         };
@@ -576,7 +572,7 @@ mod tests {
     use std::sync::Arc;
 
     use alloy::{
-        primitives::{address, Address, U256},
+        primitives::{Address, U256, address},
         providers::ProviderBuilder,
     };
 
@@ -599,7 +595,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_new_from_address() {
         let rpc_endpoint = std::env::var("ETHEREUM_RPC_ENDPOINT").unwrap();
-        let provider = Arc::new(ProviderBuilder::new().on_http(rpc_endpoint.parse().unwrap()));
+        let provider = Arc::new(ProviderBuilder::new().connect_http(rpc_endpoint.parse().unwrap()));
 
         let pool = UniswapV2Pool::new_from_address(
             address!("B4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc"),
@@ -634,7 +630,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_pool_data() {
         let rpc_endpoint = std::env::var("ETHEREUM_RPC_ENDPOINT").unwrap();
-        let provider = Arc::new(ProviderBuilder::new().on_http(rpc_endpoint.parse().unwrap()));
+        let provider = Arc::new(ProviderBuilder::new().connect_http(rpc_endpoint.parse().unwrap()));
 
         let mut pool = UniswapV2Pool {
             address: address!("B4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc"),
@@ -682,7 +678,7 @@ mod tests {
     #[tokio::test]
     async fn test_calculate_price() {
         let rpc_endpoint = std::env::var("ETHEREUM_RPC_ENDPOINT").unwrap();
-        let provider = Arc::new(ProviderBuilder::new().on_http(rpc_endpoint.parse().unwrap()));
+        let provider = Arc::new(ProviderBuilder::new().connect_http(rpc_endpoint.parse().unwrap()));
 
         let mut pool = UniswapV2Pool {
             address: address!("B4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc"),
@@ -710,7 +706,7 @@ mod tests {
     #[tokio::test]
     async fn test_calculate_price_64_x_64() {
         let rpc_endpoint = std::env::var("ETHEREUM_RPC_ENDPOINT").unwrap();
-        let provider = Arc::new(ProviderBuilder::new().on_http(rpc_endpoint.parse().unwrap()));
+        let provider = Arc::new(ProviderBuilder::new().connect_http(rpc_endpoint.parse().unwrap()));
 
         let mut pool = UniswapV2Pool {
             address: address!("B4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc"),

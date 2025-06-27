@@ -7,15 +7,15 @@ use alloy::{
     sol_types::SolEvent,
 };
 use async_trait::async_trait;
-use futures::{stream::FuturesUnordered, StreamExt};
+use futures::{StreamExt, stream::FuturesUnordered};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    amm::{factory::AutomatedMarketMakerFactory, AutomatedMarketMaker, AMM},
+    amm::{AMM, AutomatedMarketMaker, factory::AutomatedMarketMakerFactory},
     errors::AMMError,
 };
 
-use super::{batch_request, BalancerV2Pool};
+use super::{BalancerV2Pool, batch_request};
 
 sol! {
     #[derive(Debug, PartialEq, Eq)]
@@ -102,7 +102,7 @@ impl AutomatedMarketMakerFactory for BalancerV2Factory {
 
     /// Creates a new empty AMM from a log factory creation event.
     fn new_empty_amm_from_log(&self, log: Log) -> Result<AMM, alloy::sol_types::Error> {
-        let pair_created_event = IBFactory::LOG_NEW_POOL::decode_log(log.as_ref(), true)?;
+        let pair_created_event = IBFactory::LOG_NEW_POOL::decode_log(log.as_ref())?;
         let pool = BalancerV2Pool {
             address: pair_created_event.pool,
             ..Default::default()

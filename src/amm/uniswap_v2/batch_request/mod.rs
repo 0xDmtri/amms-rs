@@ -7,7 +7,7 @@ use alloy::{
 };
 
 use crate::{
-    amm::{AutomatedMarketMaker, AMM},
+    amm::{AMM, AutomatedMarketMaker},
     errors::AMMError,
 };
 
@@ -39,7 +39,7 @@ where
 {
     let deployer = IGetUniswapV2PairsBatchRequest::deploy_builder(provider, from, step, factory);
     let res = deployer.call_raw().await?;
-    Ok(<Vec<Address> as SolValue>::abi_decode(&res, false)?)
+    Ok(<Vec<Address> as SolValue>::abi_decode(&res)?)
 }
 
 pub async fn get_amm_data_batch_request<N, P>(amms: &mut [AMM], provider: P) -> Result<(), AMMError>
@@ -55,8 +55,7 @@ where
     let deployer = IGetUniswapV2PoolDataBatchRequest::deploy_builder(provider, target_addresses);
     let res = deployer.call().await?;
 
-    let pools =
-        <Vec<(Address, u16, Address, u16, u128, u128)> as SolValue>::abi_decode(&res, false)?;
+    let pools = <Vec<(Address, u16, Address, u16, u128, u128)> as SolValue>::abi_decode(&res)?;
 
     for (pool_idx, (token_a, token_a_dec, token_b, token_b_dec, reserve_0, reserve_1)) in
         pools.into_iter().enumerate()
@@ -93,8 +92,7 @@ where
     let deployer = IGetUniswapV2PoolDataBatchRequest::deploy_builder(provider, vec![pool.address]);
     let res = deployer.call_raw().await?;
 
-    let data =
-        <Vec<(Address, u16, Address, u16, u128, u128)> as SolValue>::abi_decode(&res, false)?;
+    let data = <Vec<(Address, u16, Address, u16, u128, u128)> as SolValue>::abi_decode(&res)?;
     let (token_a, token_a_dec, token_b, token_b_dec, reserve_0, reserve_1) = if !data.is_empty() {
         data[0]
     } else {

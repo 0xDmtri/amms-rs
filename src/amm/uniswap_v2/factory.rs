@@ -9,13 +9,13 @@ use alloy::{
 use async_trait::async_trait;
 
 use crate::{
-    amm::{factory::AutomatedMarketMakerFactory, AMM},
+    amm::{AMM, factory::AutomatedMarketMakerFactory},
     errors::AMMError,
 };
 use serde::{Deserialize, Serialize};
 use tracing::instrument;
 
-use super::{batch_request, UniswapV2Pool, U256_1};
+use super::{U256_1, UniswapV2Pool, batch_request};
 
 sol! {
     /// Interface of the UniswapV2Factory contract
@@ -55,9 +55,7 @@ impl UniswapV2Factory {
     {
         let factory = IUniswapV2Factory::new(self.address, provider.clone());
 
-        let IUniswapV2Factory::allPairsLengthReturn {
-            length: pairs_length,
-        } = factory.allPairsLength().call().await?;
+        let pairs_length = factory.allPairsLength().call().await?;
 
         let mut pairs = vec![];
         // NOTE: max batch size for this call until codesize is too large
@@ -120,7 +118,7 @@ impl AutomatedMarketMakerFactory for UniswapV2Factory {
         N: Network,
         P: Provider<N> + Clone,
     {
-        let pair_created_event = IUniswapV2Factory::PairCreated::decode_log(log.as_ref(), true)?;
+        let pair_created_event = IUniswapV2Factory::PairCreated::decode_log(log.as_ref())?;
         Ok(AMM::UniswapV2Pool(
             UniswapV2Pool::new_from_address(
                 pair_created_event.pair,
@@ -133,7 +131,7 @@ impl AutomatedMarketMakerFactory for UniswapV2Factory {
     }
 
     fn new_empty_amm_from_log(&self, log: Log) -> Result<AMM, alloy::sol_types::Error> {
-        let pair_created_event = IUniswapV2Factory::PairCreated::decode_log(log.as_ref(), true)?;
+        let pair_created_event = IUniswapV2Factory::PairCreated::decode_log(log.as_ref())?;
 
         Ok(AMM::UniswapV2Pool(UniswapV2Pool {
             address: pair_created_event.pair,

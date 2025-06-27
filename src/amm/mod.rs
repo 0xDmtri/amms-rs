@@ -1,6 +1,5 @@
 pub mod balancer_v2;
 pub mod consts;
-pub mod erc_4626;
 pub mod factory;
 pub mod uniswap_v2;
 pub mod uniswap_v3;
@@ -20,7 +19,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::errors::AMMError;
 
-use self::{erc_4626::ERC4626Vault, uniswap_v2::UniswapV2Pool, uniswap_v3::UniswapV3Pool};
+use self::{uniswap_v2::UniswapV2Pool, uniswap_v3::UniswapV3Pool};
 
 sol! {
     /// Interface of the ERC20
@@ -183,4 +182,4 @@ macro_rules! amm {
     };
 }
 
-amm!(UniswapV2Pool, UniswapV3Pool, ERC4626Vault, BalancerV2Pool);
+amm!(UniswapV2Pool, UniswapV3Pool, BalancerV2Pool);

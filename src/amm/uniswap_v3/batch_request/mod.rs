@@ -1,6 +1,6 @@
 use alloy::{
     network::Network,
-    primitives::{aliases::I24, Address, U256},
+    primitives::{Address, U256, aliases::I24},
     providers::Provider,
     sol,
     sol_types::SolValue,
@@ -8,11 +8,11 @@ use alloy::{
 use tracing::instrument;
 
 use crate::{
-    amm::{AutomatedMarketMaker, AMM},
+    amm::{AMM, AutomatedMarketMaker},
     errors::AMMError,
 };
 
-use super::{compute_pool_key_hash, UniswapV3Pool};
+use super::{UniswapV3Pool, compute_pool_key_hash};
 
 sol! {
     #[allow(missing_docs)]
@@ -51,7 +51,7 @@ where
         deployer.call_raw().await?
     };
 
-    let data = <Vec<(Address, u16, Address, u16, u128, U256, i32, i32, u32, i128)> as SolValue>::abi_decode(&res, false)?;
+    let data = <Vec<(Address, u16, Address, u16, u128, U256, i32, i32, u32, i128)> as SolValue>::abi_decode(&res)?;
     let (
         token_a,
         token_a_dec,
@@ -116,7 +116,7 @@ where
     };
 
     let (tick_data_vec, block_number) =
-        <(Vec<(bool, i32, i128)>, u32) as SolValue>::abi_decode(&res, false)?;
+        <(Vec<(bool, i32, i128)>, u32) as SolValue>::abi_decode(&res)?;
     let mut tick_data = vec![];
 
     for (initialized, tick, liquidity_net) in tick_data_vec.into_iter() {
@@ -141,7 +141,7 @@ where
     let deployer = ISyncUniswapV3PoolBatchRequest::deploy_builder(provider, vec![pool.address]);
     let res = deployer.call_raw().await?;
 
-    let data = <Vec<(u128, U256, i32, i128)> as SolValue>::abi_decode(&res, false)?;
+    let data = <Vec<(u128, U256, i32, i128)> as SolValue>::abi_decode(&res)?;
 
     let (liquidity, sqrt_price, tick, _) = if !data.is_empty() {
         if data.len() == 1 {
@@ -181,7 +181,7 @@ where
     let deployer = IGetUniswapV3PoolDataBatchRequest::deploy_builder(provider, target_addresses);
     let res = deployer.block(block_number.into()).call_raw().await?;
 
-    let pools = <Vec<(Address, u16, Address, u16, u128, U256, i32, i32, u32, i128)> as SolValue>::abi_decode(&res, false)?;
+    let pools = <Vec<(Address, u16, Address, u16, u128, U256, i32, i32, u32, i128)> as SolValue>::abi_decode(&res)?;
 
     for (
         pool_idx,

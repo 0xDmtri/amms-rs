@@ -8,8 +8,8 @@ use alloy::{
 
 use crate::{
     amm::{
+        AMM, AutomatedMarketMaker,
         factory::{AutomatedMarketMakerFactory, Factory},
-        AutomatedMarketMaker, AMM,
     },
     errors::AMMError,
 };
@@ -190,7 +190,7 @@ where
     );
     let res = deployer.call_raw().await?;
 
-    let weth_value_in_pools = <Vec<U256> as SolValue>::abi_decode(&res, false)?;
+    let weth_value_in_pools = <Vec<U256> as SolValue>::abi_decode(&res)?;
 
     Ok(weth_value_in_pools)
 }
@@ -221,7 +221,7 @@ mod test {
     async fn test_weth_value_filter() {
         let ipc_endpoint = std::env::var("WS").unwrap();
         let ws = WsConnect::new(ipc_endpoint.to_owned());
-        let provider = Arc::new(ProviderBuilder::new().on_ws(ws).await.unwrap());
+        let provider = Arc::new(ProviderBuilder::new().connect_ws(ws).await.unwrap());
 
         let factories = vec![
             // Add Uniswap V2

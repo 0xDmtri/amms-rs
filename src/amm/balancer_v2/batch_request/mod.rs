@@ -7,7 +7,7 @@ use alloy::{
 };
 
 use crate::{
-    amm::{AutomatedMarketMaker, AMM},
+    amm::{AMM, AutomatedMarketMaker},
     errors::AMMError,
 };
 
@@ -37,9 +37,7 @@ where
     };
 
     let mut data =
-        <Vec<(Vec<Address>, Vec<u16>, Vec<U256>, Vec<U256>, u32)> as SolValue>::abi_decode(
-            &res, false,
-        )?;
+        <Vec<(Vec<Address>, Vec<u16>, Vec<U256>, Vec<U256>, u32)> as SolValue>::abi_decode(&res)?;
     let (tokens, decimals, liquidity, weights, fee) = if !data.is_empty() {
         data.remove(0)
     } else {
@@ -68,9 +66,8 @@ where
     );
     let res = deployer.call_raw().await?;
 
-    let pools = <Vec<(Vec<Address>, Vec<u16>, Vec<U256>, Vec<U256>, u32)> as SolValue>::abi_decode(
-        &res, false,
-    )?;
+    let pools =
+        <Vec<(Vec<Address>, Vec<u16>, Vec<U256>, Vec<U256>, u32)> as SolValue>::abi_decode(&res)?;
 
     for (pool_idx, (tokens, decimals, liquidity, weights, fee)) in pools.into_iter().enumerate() {
         if let AMM::BalancerV2Pool(pool) = amms

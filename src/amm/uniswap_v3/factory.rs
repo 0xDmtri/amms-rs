@@ -9,16 +9,16 @@ use alloy::{
     sol_types::SolEvent,
 };
 use async_trait::async_trait;
-use futures::{stream::FuturesOrdered, StreamExt};
+use futures::{StreamExt, stream::FuturesOrdered};
 use serde::{Deserialize, Serialize};
 use tracing::instrument;
 
 use crate::{
-    amm::{factory::AutomatedMarketMakerFactory, AutomatedMarketMaker, AMM},
+    amm::{AMM, AutomatedMarketMaker, factory::AutomatedMarketMakerFactory},
     errors::{AMMError, EventLogError},
 };
 
-use super::{batch_request, compute_pool_key_hash, IUniswapV3Pool, UniswapV3Pool};
+use super::{IUniswapV3Pool, UniswapV3Pool, batch_request, compute_pool_key_hash};
 
 sol! {
     /// Interface of the UniswapV3Factory contract
@@ -58,7 +58,7 @@ impl AutomatedMarketMakerFactory for UniswapV3Factory {
         P: Provider<N> + Clone,
     {
         if let Some(block_number) = log.block_number {
-            let pool_created_filter = IUniswapV3Factory::PoolCreated::decode_log(&log.inner, true)?;
+            let pool_created_filter = IUniswapV3Factory::PoolCreated::decode_log(&log.inner)?;
             Ok(AMM::UniswapV3Pool(
                 UniswapV3Pool::new_from_address(
                     pool_created_filter.pool,
@@ -120,7 +120,7 @@ impl AutomatedMarketMakerFactory for UniswapV3Factory {
     }
 
     fn new_empty_amm_from_log(&self, log: Log) -> Result<AMM, alloy::sol_types::Error> {
-        let pool_created_event = IUniswapV3Factory::PoolCreated::decode_log(&log.inner, true)?;
+        let pool_created_event = IUniswapV3Factory::PoolCreated::decode_log(&log.inner)?;
 
         Ok(AMM::UniswapV3Pool(UniswapV3Pool {
             address: pool_created_event.pool,

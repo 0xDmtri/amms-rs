@@ -13,10 +13,10 @@ use tokio::task::JoinHandle;
 
 use crate::{
     amm::{
+        AMM,
         factory::{AutomatedMarketMakerFactory, Factory},
         uniswap_v2::factory::UniswapV2Factory,
         uniswap_v3::factory::UniswapV3Factory,
-        AMM,
     },
     errors::{AMMError, CheckpointError},
     filters,
@@ -65,8 +65,7 @@ where
         serde_json::from_str(read_to_string(&path_to_checkpoint)?.as_str())?;
 
     // Sort all of the pools from the checkpoint into uniswap_v2_pools and uniswap_v3_pools pools so we can sync them concurrently
-    let (uniswap_v2_pools, uniswap_v3_pools, erc_4626_pools, balancer_v2_pools) =
-        sort_amms(checkpoint.amms);
+    let (uniswap_v2_pools, uniswap_v3_pools, balancer_v2_pools) = sort_amms(checkpoint.amms);
 
     let mut aggregated_amms = vec![];
     let mut handles = vec![];
@@ -92,14 +91,6 @@ where
                 provider.clone(),
             )
             .await,
-        );
-    }
-
-    if !erc_4626_pools.is_empty() {
-        // TODO: Batch sync erc4626 pools from checkpoint
-        todo!(
-            r#"""This function will produce an incorrect state if ERC4626 pools are present in the checkpoint. 
-            This logic needs to be implemented into batch_sync_amms_from_checkpoint"""#
         );
     }
 
@@ -211,7 +202,6 @@ where
             0,
         ))),
 
-        AMM::ERC4626Vault(_) => None,
         AMM::BalancerV2Pool(_) => None,
     };
 
@@ -237,26 +227,19 @@ where
     })
 }
 
-pub fn sort_amms(amms: Vec<AMM>) -> (Vec<AMM>, Vec<AMM>, Vec<AMM>, Vec<AMM>) {
+pub fn sort_amms(amms: Vec<AMM>) -> (Vec<AMM>, Vec<AMM>, Vec<AMM>) {
     let mut uniswap_v2_pools = vec![];
     let mut uniswap_v3_pools = vec![];
-    let mut erc_4626_vaults = vec![];
     let mut balancer_v2_pools = vec![];
     for amm in amms {
         match amm {
             AMM::UniswapV2Pool(_) => uniswap_v2_pools.push(amm),
             AMM::UniswapV3Pool(_) => uniswap_v3_pools.push(amm),
-            AMM::ERC4626Vault(_) => erc_4626_vaults.push(amm),
             AMM::BalancerV2Pool(_) => balancer_v2_pools.push(amm),
         }
     }
 
-    (
-        uniswap_v2_pools,
-        uniswap_v3_pools,
-        erc_4626_vaults,
-        balancer_v2_pools,
-    )
+    (uniswap_v2_pools, uniswap_v3_pools, balancer_v2_pools)
 }
 
 pub async fn get_new_pools_from_range<N, P>(

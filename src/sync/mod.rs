@@ -146,13 +146,6 @@ where
                 }
             }
 
-            // TODO: Implement batch request
-            AMM::ERC4626Vault(_) => {
-                for amm in amms {
-                    amm.populate_data(None, provider.clone()).await?;
-                }
-            }
-
             AMM::BalancerV2Pool(_) => {
                 for amm in amms {
                     amm.populate_data(None, provider.clone()).await?;
